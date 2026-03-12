@@ -564,6 +564,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   sonTinhScenes:
   - Son tinh 1
+  - Son tinh 2
   isSonTinhPortal: 1
   oneTimeUse: 1
   portalEffect: {fileID: 0}
