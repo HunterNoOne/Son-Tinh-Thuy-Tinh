@@ -49,10 +49,13 @@ public class NetworkPlayerController : NetworkBehaviour
     private float slowMultiplier = 1f;
     private float slowTimer      = 0f;
     private float confusedTimer  = 0f;
-
+    
     // Knockback
     private Vector3 knockbackVelocity = Vector3.zero;
     private float   knockbackDecay    = 5f;
+
+    // Khi true: đang hiển thị UI ngoài (mini game, menu...) nên tạm dừng điều khiển nhân vật
+    private bool externalUiActive = false;
 
     private void Awake()
     {
@@ -144,7 +147,16 @@ public class NetworkPlayerController : NetworkBehaviour
             if (localPlayerCamera != null)
             {
                 localPlayerCamera.SetActive(true);
-                Debug.Log($"✅ Enabled local camera for player {OwnerClientId}");
+                var camComponent = localPlayerCamera.GetComponent<Camera>();
+                if (camComponent != null)
+                {
+                    camComponent.tag = "MainCamera";
+                    Debug.Log($"✅ Enabled local camera for player {OwnerClientId} and set tag MainCamera");
+                }
+                else
+                {
+                    Debug.LogWarning("⚠️ localPlayerCamera không có component Camera.");
+                }
             }
             else
             {
@@ -153,6 +165,8 @@ public class NetworkPlayerController : NetworkBehaviour
                 {
                     cam.gameObject.SetActive(true);
                     cam.enabled = true;
+                    cam.tag = "MainCamera";
+                    Debug.Log($"✅ Enabled fallback camera for player {OwnerClientId} and set tag MainCamera");
                 }
             }
 
@@ -172,7 +186,15 @@ public class NetworkPlayerController : NetworkBehaviour
         }
         else
         {
-            if (localPlayerCamera != null) localPlayerCamera.SetActive(false);
+            if (localPlayerCamera != null)
+            {
+                localPlayerCamera.SetActive(false);
+                var camComponent = localPlayerCamera.GetComponent<Camera>();
+                if (camComponent != null)
+                {
+                    camComponent.tag = "Untagged";
+                }
+            }
 
             Camera[] cameras = GetComponentsInChildren<Camera>(true);
             foreach (Camera cam in cameras)
@@ -237,6 +259,8 @@ public class NetworkPlayerController : NetworkBehaviour
         if (!IsOwner) return;
         if (!GameLoadSystem.Ready) return;
 
+        if (externalUiActive) return;
+
         // CC Timers
         if (stunTimer > 0)     stunTimer     -= Time.deltaTime;
         if (confusedTimer > 0) confusedTimer -= Time.deltaTime;
@@ -261,6 +285,22 @@ public class NetworkPlayerController : NetworkBehaviour
             Move();
             Look();
         }
+    }
+
+    public void EnterUiMode()
+    {
+        externalUiActive = true;
+        isCursorUnlocked = true;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+    }
+
+    public void ExitUiMode()
+    {
+        externalUiActive = false;
+        isCursorUnlocked = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible   = false;
     }
 
     // ==========================================

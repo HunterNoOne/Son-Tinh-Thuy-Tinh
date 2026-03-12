@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Unity.Netcode;
 
 namespace MiniGame
 {
@@ -28,6 +29,8 @@ namespace MiniGame
         private CursorLockMode previousCursorLockMode;
         private bool previousCursorVisible;
 
+        private NetworkPlayerController localPlayer;
+
         private void Awake()
         {
             canvas = GetComponent<Canvas>();
@@ -40,46 +43,58 @@ namespace MiniGame
 
         private void OnEnable()
         {
-            if (Camera.main == null)
+            // KHÔNG thay đổi renderMode thành ScreenSpaceCamera nữa
+            // Chỉ cần gán Camera để hệ thống biết tia Raycast từ đâu tới
+            if (Camera.main != null)
             {
-                Debug.LogError("[MiniGameCanvas] Không tìm thấy Camera.main!");
-                return;
+                canvas.worldCamera = Camera.main;
+                Debug.Log($"[MiniGameCanvasSetup] Gán worldCamera = {Camera.main.gameObject.name}");
+            }
+            else
+            {
+                Debug.LogWarning("[MiniGameCanvasSetup] Camera.main == null. Raycast UI sẽ không hoạt động!");
             }
 
-            // ✅ Chuyển sang Screen Space - Camera để DragDrop hoạt động chính xác
-            canvas.renderMode    = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera   = Camera.main;
-            canvas.planeDistance = planeDistance;
-            Debug.Log($"[MiniGameCanvas] Chuyển sang Screen Space - Camera (planeDistance={planeDistance})");
+            // Tìm local player (chỉ một lần)
+            if (localPlayer == null)
+            {
+                var players = FindObjectsOfType<NetworkPlayerController>();
+                foreach (var p in players)
+                {
+                    if (p.IsOwner)
+                    {
+                        localPlayer = p;
+                        break;
+                    }
+                }
+            }
 
-            // Kiểm tra EventSystem
-            if (EventSystem.current == null)
-                Debug.LogError("[MiniGameCanvas] ⚠️ Không có EventSystem trong scene!");
+            if (localPlayer != null)
+            {
+                localPlayer.EnterUiMode();
+            }
 
-            // Unlock cursor để kéo thả được
             if (unlockCursorWhenOpen)
             {
                 previousCursorLockMode = Cursor.lockState;
                 previousCursorVisible  = Cursor.visible;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible   = true;
-                Debug.Log("[MiniGameCanvas] Cursor unlocked");
             }
         }
 
         private void OnDisable()
         {
-            // Trả canvas về World Space khi đóng
-            canvas.renderMode    = originalRenderMode;
-            canvas.worldCamera   = originalWorldCamera;
-            canvas.planeDistance = originalPlaneDistance;
+            if (localPlayer != null)
+            {
+                localPlayer.ExitUiMode();
+            }
 
-            // Khôi phục cursor
+            // Chỉ cần khôi phục Cursor
             if (unlockCursorWhenOpen)
             {
                 Cursor.lockState = previousCursorLockMode;
                 Cursor.visible   = previousCursorVisible;
-                Debug.Log("[MiniGameCanvas] Cursor restored");
             }
         }
 
