@@ -154,8 +154,8 @@ MonoBehaviour:
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
-          time: 0.665
-          value: 0.6084656
+          time: 0.7293233
+          value: 0.52910054
           inSlope: 1.1283901
           outSlope: 1.1283901
           tangentMode: 0
@@ -335,7 +335,7 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 2
   useFullACES:
     m_OverrideState: 0
     m_Value: 0
